@@ -175,7 +175,7 @@ router.post("/edit/:recipeId", isAuthenticated, (req, res, next) => {
 });
 
 // Updates a recipe you are the author of. //Tested Works
-router.put("/update/:recipeId", isAuthenticated, (req, res, next) => {
+router.post("/update/:recipeId", isAuthenticated, (req, res, next) => {
   const { recipeId } = req.params;
   const { name, category, ingredients, instructions, image } = req.body;
   Recipe.findById(recipeId).then((foundRecipe) => {

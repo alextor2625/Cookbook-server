@@ -133,7 +133,7 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
 });
 
 // tested
-router.put("/update/:reviewId", isAuthenticated, (req, res, next) => {
+router.post("/update/:reviewId", isAuthenticated, (req, res, next) => {
   const { reviewId } = req.params;
   const { rating, comment } = req.body;
   Review.findById(reviewId).then((foundReview) => {

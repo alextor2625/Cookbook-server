@@ -156,7 +156,7 @@ router.post("/add/:cookbookId/:recipeId", isAuthenticated, (req, res, next) => {
   });
 });
 //tested
-router.put("/update/:cookbookId", isAuthenticated, (req, res, next) => {
+router.post("/update/:cookbookId", isAuthenticated, (req, res, next) => {
   const { cookbookId } = req.params;
   const { name } = req.body;
   Cookbook.findById(cookbookId).then((foundCookbook) => {

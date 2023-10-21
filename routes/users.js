@@ -85,7 +85,7 @@ router.get('/profile', isAuthenticated, (req, res, next) => {
     });
 })
 //Tested Works
-router.put("/update", isAuthenticated, (req, res, next) => {
+router.post("/update", isAuthenticated, (req, res, next) => {
   const { name, email, image } = req.body;
 
   User.findById(req.user._id)
