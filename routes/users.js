@@ -10,7 +10,12 @@ const jwt = require("jsonwebtoken");
 router.get('/profiles', (req, res, next) => {
   User.find()
   .then(allUsers => {
-    res.json(allUsers)
+    const users = allUsers.map(usr => {
+      const {name, email, image, recipes,reviews,cookbooks} = usr;
+      const user = {name, email, image, recipes,reviews,cookbooks}
+      return user;
+    })
+    res.json(users)
   })
   .catch((err) => {
     console.log(err);
