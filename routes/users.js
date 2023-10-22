@@ -7,23 +7,22 @@ const isAuthenticated = require("../middleware/isAuthenticated");
 const jwt = require("jsonwebtoken");
 
 /* GET users listing. */ //Tested Works
-router.get('/profiles', (req, res, next) => {
+router.get("/profiles", (req, res, next) => {
   User.find()
-  .then(allUsers => {
-    const users = allUsers.map(usr => {
-      const {_id, name, email, image, recipes,reviews,cookbooks} = usr;
-      const user = {_id,name, email, image, recipes,reviews,cookbooks}
-      return user;
+    .then((allUsers) => {
+      const users = allUsers.map((usr) => {
+        const { _id, name, email, image, recipes, reviews, cookbooks } = usr;
+        const user = { _id, name, email, image, recipes, reviews, cookbooks };
+        return user;
+      });
+      res.json(users);
     })
-    res.json(users)
-  })
-  .catch((err) => {
-    console.log(err);
-    res.json(err);
-    next(err);
-  });
-
-})
+    .catch((err) => {
+      console.log(err);
+      res.json(err);
+      next(err);
+    });
+});
 
 //Tested Works
 router.get("/profile/:userId", isAuthenticated, (req, res, next) => {
@@ -58,7 +57,7 @@ router.get("/profile/:userId", isAuthenticated, (req, res, next) => {
     });
 });
 //Tested Works
-router.get('/profile', isAuthenticated, (req, res, next) => {
+router.get("/profile", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
   User.findById(userId)
     .then((foundUser) => {
@@ -88,7 +87,7 @@ router.get('/profile', isAuthenticated, (req, res, next) => {
       res.json(err);
       next(err);
     });
-})
+});
 //Tested Works
 router.post("/update", isAuthenticated, (req, res, next) => {
   const { name, email, image } = req.body;
@@ -103,12 +102,12 @@ router.post("/update", isAuthenticated, (req, res, next) => {
           },
           { new: true }
         )
-        .then(updatedUser => console.log('Changed User Email'))
-        .catch((err) => {
-          console.log(err);
-          res.json(err);
-          next(err);
-        });
+          .then((updatedUser) => console.log("Changed User Email"))
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
       }
       if (image !== "") {
         User.findByIdAndUpdate(
@@ -118,12 +117,12 @@ router.post("/update", isAuthenticated, (req, res, next) => {
           },
           { new: true }
         )
-        .then(updatedUser => console.log('Changed User Image'))
-        .catch((err) => {
-          console.log(err);
-          res.json(err);
-          next(err);
-        });
+          .then((updatedUser) => console.log("Changed User Image"))
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
       }
       User.findByIdAndUpdate(
         req.user._id,
@@ -150,7 +149,8 @@ router.post("/update", isAuthenticated, (req, res, next) => {
           }
         })
         .then((updatedUser) => {
-          const { _id, email, name, cookbooks, recipes, reviews, image } = updatedUser;
+          const { _id, email, name, cookbooks, recipes, reviews, image } =
+            updatedUser;
           const user = { _id, email, name, cookbooks, recipes, reviews, image };
           authToken = jwt.sign(user, process.env.SECRET, {
             algorithm: "HS256",
@@ -173,19 +173,17 @@ router.post("/update", isAuthenticated, (req, res, next) => {
 });
 
 //Tested Works
-router.delete('/delete', isAuthenticated, (req, res, next) =>{
+router.delete("/delete", isAuthenticated, (req, res, next) => {
   User.findByIdAndDelete(req.user._id)
-  .then(deletedUser => {
-    console.log('User Deleted ====>', deletedUser);
-    res.json({message: "User Deleted", deletedUser})
-  })
-  .catch((err) => {
-    console.log(err);
-    res.json({message: "An error occured while deleting user."});
-    next(err);
-  });
-})
-
-
+    .then((deletedUser) => {
+      console.log("User Deleted ====>", deletedUser);
+      res.json({ message: "User Deleted", deletedUser });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.json({ message: "An error occured while deleting user." });
+      next(err);
+    });
+});
 
 module.exports = router;
