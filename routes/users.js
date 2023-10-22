@@ -11,8 +11,8 @@ router.get('/profiles', (req, res, next) => {
   User.find()
   .then(allUsers => {
     const users = allUsers.map(usr => {
-      const {name, email, image, recipes,reviews,cookbooks} = usr;
-      const user = {name, email, image, recipes,reviews,cookbooks}
+      const {_id, name, email, image, recipes,reviews,cookbooks} = usr;
+      const user = {_id,name, email, image, recipes,reviews,cookbooks}
       return user;
     })
     res.json(users)
