@@ -81,45 +81,100 @@ router.post("/signup", (req, res, next) => {
 //Tested Works
 router.post("/login", (req, res, next) => {
   const { email, password } = req.body;
-
   if (email == "" || password == "") {
     res.status(400).json({ message: "Provide email and password." });
     return;
   }
 
-  User.findOne({ email }).then((foundUser) => {
-    if (!foundUser) {
-      res.status(401).json({ message: "User not found." });
-      return;
-    }
-    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
-    if (passwordCorrect) {
-      const { email, name, _id, image, cookbooks, recipes } = foundUser;
-      const payload = { email, name, _id, image, cookbooks, recipes };
-      const authToken = jwt.sign(payload, process.env.SECRET, {
-        algorithm: "HS256",
-        expiresIn: "6h",
-      });
-      res.status(200).json({ authToken });
-    } else {
-      res.status(401).json({ message: "Unable to authenticate the user" });
-    }
-  })
-  .catch(err =>{
-    console.log(err);
-    res.status(500).json({ message: "Internal Server Error" })
-  })
+  User.findOne({ email })
+    .then((foundUser) => {
+      if (!foundUser) {
+        console.log("User not found.");
+        res.status(401).json({ message: "User not found." });
+        return;
+      } else {
+        const passwordCorrect = bcrypt.compareSync(
+          password,
+          foundUser.password
+        );
+        if (passwordCorrect) {
+          let { email, name, _id, image, cookbooks, recipes, reviews } =
+            foundUser;
+          const promises = [];
+          if (recipes.length) {
+            promises.push(
+              User.findById(_id)
+                .populate("recipes")
+                .then((populatedUser) => {
+                  recipes = JSON.parse(JSON.stringify(populatedUser.recipes));
+                })
+                .catch((err) => {
+                  console.log(err);
+                  res.status(500).json({ message: "Internal Server Error" });
+                })
+            );
+          }
+          if (cookbooks.length) {
+            promises.push(
+              User.findById(_id)
+                .populate("cookbooks")
+                .then((populatedUser) => {
+                  cookbooks = JSON.parse(
+                    JSON.stringify(populatedUser.cookbooks)
+                  );
+                })
+                .catch((err) => {
+                  console.log(err);
+                  res.status(500).json({ message: "Internal Server Error" });
+                })
+            );
+          }
+          if (reviews.length) {
+            promises.push(
+              User.findById(_id)
+                .populate("reviews")
+                .then((populatedUser) => {
+                  reviews = JSON.parse(JSON.stringify(populatedUser.reviews));
+                })
+                .catch((err) => {
+                  console.log(err);
+                  res.status(500).json({ message: "Internal Server Error" });
+                })
+            );
+          }
+          Promise.all(promises).then(() => {
+            const payload = { email, name, _id, image, cookbooks, recipes, reviews };
+            const authToken = jwt.sign(payload, process.env.SECRET, {
+              algorithm: "HS256",
+              expiresIn: "6h",
+            });
+            res.status(200).json({ authToken });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(500).json({ message: "Internal Server Error" });
+          });
+        } else {
+          res.status(401).json({ message: "Unable to authenticate the user" });
+        }
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ message: "Internal Server Error" });
+    });
 });
 //Tested Works
-router.get('/verify', isAuthenticated, (req, res, next) => {       // <== CREATE NEW ROUTE
- 
-    // If JWT token is valid the payload gets decoded by the
-    // isAuthenticated middleware and made available on `req.payload`
-    console.log("req.user", req.user);
-   
-    // Send back the object with user data
-    // previously set as the token payload
-    res.status(200).json(req.user);
-  });
+router.get("/verify", isAuthenticated, (req, res, next) => {
+  // <== CREATE NEW ROUTE
+
+  // If JWT token is valid the payload gets decoded by the
+  // isAuthenticated middleware and made available on `req.payload`
+  console.log("req.user", req.user);
+
+  // Send back the object with user data
+  // previously set as the token payload
+  res.status(200).json(req.user);
+});
 
 module.exports = router;
