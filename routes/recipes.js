@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken");
 router.get("/all", (req, res, next) => {
   Recipe.find()
     .populate("author")
+    .populate("alteredBy")
     .then((allRecipes) => {
       res.json(allRecipes);
     })

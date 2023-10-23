@@ -10,17 +10,55 @@ const jwt = require("jsonwebtoken");
 router.get("/profiles", (req, res, next) => {
   User.find()
     .then((allUsers) => {
-      const users = allUsers.map((usr) => {
-        const { _id, name, email, image, recipes, reviews, cookbooks } = usr;
-        const user = { _id, name, email, image, recipes, reviews, cookbooks };
-        return user;
+      const userPromises = allUsers.map((usr) => {
+        let { _id, name, email, image, recipes, reviews, cookbooks } = usr;
+
+        const promises = [];
+
+        if (recipes.length) {
+          promises.push(
+            User.findById(usr._id)
+              .populate("recipes")
+              .then((populatedUser) => {
+                recipes = JSON.parse(JSON.stringify(populatedUser.recipes));
+              })
+          );
+        }
+
+        if (reviews.length) {
+          promises.push(
+            User.findById(usr._id)
+              .populate("reviews")
+              .then((populatedUser) => {
+                reviews = JSON.parse(JSON.stringify(populatedUser.reviews));
+              })
+          );
+        }
+
+        if (usr.cookbooks.length) {
+          promises.push(
+            User.findById(usr._id)
+              .populate("cookbooks")
+              .then((populatedUser) => {
+                cookbooks = JSON.parse(JSON.stringify(populatedUser.cookbooks));
+              })
+          );
+        }
+
+        return Promise.all(promises).then(() => {
+          const user = { _id, name, email, image, recipes, reviews, cookbooks };
+          return user;
+        });
       });
-      res.json(users);
+
+      Promise.all(userPromises).then((users) => {
+        res.json(users);
+      });
     })
     .catch((err) => {
-      console.log(err);
-      res.json(err);
-      next(err);
+      // Handle errors
+      console.error(err);
+      res.status(500).json({ error: "An error occurred" });
     });
 });
 
