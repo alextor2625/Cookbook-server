@@ -8,9 +8,10 @@ const Recipe = require("../models/Recipe");
 
 const isAuthenticated = require("../middleware/isAuthenticated");
 // tested
-router.get("/all", isAuthenticated, (req, res, next) => {
+router.get("/all", (req, res, next) => {
   Review.find()
     .then((allReview) => {
+      console.log(allReview);
       res.json(allReview);
     })
     .catch((err) => {
@@ -67,12 +68,13 @@ router.get("/:reviewId", isAuthenticated, (req, res, next) => {
 router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
   const { recipeId } = req.params;
-  const { comment, rating } = req.body;
+  const { comment, rating, title } = req.body;
   User.findById(userId)
     .then((foundUser) => {
       Review.create({
-        comment,
+        title,
         rating,
+        comment,
         author: foundUser._id,
       })
         .then((newReview) => {
@@ -135,12 +137,12 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
 // tested
 router.post("/update/:reviewId", isAuthenticated, (req, res, next) => {
   const { reviewId } = req.params;
-  const { rating, comment } = req.body;
+  const { rating, comment, title } = req.body;
   Review.findById(reviewId).then((foundReview) => {
     if (foundReview.author == req.user._id) {
       Review.findByIdAndUpdate(
         reviewId,
-        { rating, comment },
+        { rating, comment, title },
         { new: true }
       )
         .then((foundReview) => {

@@ -15,8 +15,8 @@ const saltRounds = 10;
 
 //Tested Works
 router.post("/signup", (req, res, next) => {
-  const { name, email, password } = req.body;
-
+  console.log(req.body, "<<<<This Is Req.body");
+  const { name, email, password, image } = req.body;
   if (email == "" || password == "" || name == "") {
     res.status(400).json({ message: "Provide email, password and name" });
   }
@@ -47,31 +47,57 @@ router.post("/signup", (req, res, next) => {
       // If the email is unique, proceed to hash the password
       const salt = bcrypt.genSaltSync(saltRounds);
       const hashedPassword = bcrypt.hashSync(password, salt);
+      if (image) {
+        // Create a new user in the database
+        // We return a pending promise, which allows us to chain another `then`
+        User.create({ email, password: hashedPassword, name, image })
+          .then((createdUser) => {
+            // Deconstruct the newly created user object to omit the password
+            // We should never expose passwords publicly
+            const { email, name, _id, image, cookbooks, recipes } = createdUser;
 
-      // Create a new user in the database
-      // We return a pending promise, which allows us to chain another `then`
-      User.create({ email, password: hashedPassword, name })
-        .then((createdUser) => {
-          // Deconstruct the newly created user object to omit the password
-          // We should never expose passwords publicly
-          const { email, name, _id, image, cookbooks, recipes } = createdUser;
+            // Create a new object that doesn't expose the password
+            const payload = { _id, email, name, cookbooks, recipes, image };
 
-          // Create a new object that doesn't expose the password
-          const payload = { _id, email, name, cookbooks, recipes, image };
+            // Create and sign the token
+            const authToken = jwt.sign(payload, process.env.SECRET, {
+              algorithm: "HS256",
+              expiresIn: "6h",
+            });
 
-          // Create and sign the token
-          const authToken = jwt.sign(payload, process.env.SECRET, {
-            algorithm: "HS256",
-            expiresIn: "6h",
+            // Send the token as the response
+            res.status(200).json({ authToken });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(500).json({ message: "Internal Server Error" });
           });
+      } else {
+        // Create a new user in the database
+        // We return a pending promise, which allows us to chain another `then`
+        User.create({ email, password: hashedPassword, name })
+          .then((createdUser) => {
+            // Deconstruct the newly created user object to omit the password
+            // We should never expose passwords publicly
+            const { email, name, _id, image, cookbooks, recipes } = createdUser;
 
-          // Send the token as the response
-          res.status(200).json({ authToken });
-        })
-        .catch((err) => {
-          console.log(err);
-          res.status(500).json({ message: "Internal Server Error" });
-        });
+            // Create a new object that doesn't expose the password
+            const payload = { _id, email, name, cookbooks, recipes, image };
+
+            // Create and sign the token
+            const authToken = jwt.sign(payload, process.env.SECRET, {
+              algorithm: "HS256",
+              expiresIn: "6h",
+            });
+
+            // Send the token as the response
+            res.status(200).json({ authToken });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(500).json({ message: "Internal Server Error" });
+          });
+      }
     })
     .catch((err) => {
       console.log(err);
@@ -142,18 +168,27 @@ router.post("/login", (req, res, next) => {
                 })
             );
           }
-          Promise.all(promises).then(() => {
-            const payload = { email, name, _id, image, cookbooks, recipes, reviews };
-            const authToken = jwt.sign(payload, process.env.SECRET, {
-              algorithm: "HS256",
-              expiresIn: "6h",
+          Promise.all(promises)
+            .then(() => {
+              const payload = {
+                email,
+                name,
+                _id,
+                image,
+                cookbooks,
+                recipes,
+                reviews,
+              };
+              const authToken = jwt.sign(payload, process.env.SECRET, {
+                algorithm: "HS256",
+                expiresIn: "6h",
+              });
+              res.status(200).json({ authToken });
+            })
+            .catch((err) => {
+              console.log(err);
+              res.status(500).json({ message: "Internal Server Error" });
             });
-            res.status(200).json({ authToken });
-          })
-          .catch((err) => {
-            console.log(err);
-            res.status(500).json({ message: "Internal Server Error" });
-          });
         } else {
           res.status(401).json({ message: "Unable to authenticate the user" });
         }
