@@ -45,7 +45,7 @@ router.get("/myReviews", isAuthenticated, (req, res, next) => {
     })
     .catch((err) => {
       console.log(err);
-      res.json({err});
+      res.json({ err });
       next(err);
     });
 });
@@ -98,6 +98,20 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
           )
             .populate("reviews")
             .then((updatedUser) => {
+              if (updatedUser.cookbooks.length) {
+                return updatedUser.populate("cookbooks");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
+              if (updatedUser.recipes.length) {
+                return updatedUser.populate("recipes");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
               const { _id, email, name, cookbooks, recipes, reviews, image } =
                 updatedUser;
               const user = {
@@ -138,30 +152,31 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
 router.post("/update/:reviewId", isAuthenticated, (req, res, next) => {
   const { reviewId } = req.params;
   const { rating, comment, title } = req.body;
-  Review.findById(reviewId).then((foundReview) => {
-    if (foundReview.author == req.user._id) {
-      Review.findByIdAndUpdate(
-        reviewId,
-        { rating, comment, title },
-        { new: true }
-      )
-        .then((foundReview) => {
-          res.json(foundReview);
-        })
-        .catch((err) => {
-          console.log(err);
-          res.json({ err });
-          next(err);
-        });
-    } else {
-      res.json({ message: "User is not this review's author." });
-    }
-  })
-  .catch((err) => {
-    console.log(err);
-    res.json({ err });
-    next(err);
-  });
+  Review.findById(reviewId)
+    .then((foundReview) => {
+      if (foundReview.author == req.user._id) {
+        Review.findByIdAndUpdate(
+          reviewId,
+          { rating, comment, title },
+          { new: true }
+        )
+          .then((foundReview) => {
+            res.json(foundReview);
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json({ err });
+            next(err);
+          });
+      } else {
+        res.json({ message: "User is not this review's author." });
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      res.json({ err });
+      next(err);
+    });
 });
 
 // tested
@@ -185,7 +200,27 @@ router.delete("/delete/:reviewId", isAuthenticated, (req, res, next) => {
     { $pull: { reviews: reviewId } },
     { new: true }
   )
-    .populate("reviews")
+    .then((updatedUser) => {
+      if (updatedUser.cookbooks.length) {
+        return updatedUser.populate("cookbooks");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.recipes.length) {
+        return updatedUser.populate("recipes");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.reviews.length) {
+        return updatedUser.populate("reviews");
+      } else {
+        return updatedUser;
+      }
+    })
     .then((updatedUser) => {
       const { _id, email, name, cookbooks, recipes, reviews, image } =
         updatedUser;
@@ -203,4 +238,4 @@ router.delete("/delete/:reviewId", isAuthenticated, (req, res, next) => {
     });
 });
 
-module.exports= router
+module.exports = router;

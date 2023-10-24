@@ -67,20 +67,24 @@ router.get("/profile/:userId", isAuthenticated, (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
     .then((foundUser) => {
-      if (!foundUser.cookbooks.lengh) {
-        if (foundUser.recipes.lengh) {
-          return foundUser.populate("recipes");
-        } else {
-          return foundUser;
-        }
-      } else if (!foundUser.recipes.lengh) {
-        if (foundUser.cookbooks.lengh) {
-          return foundUser.populate("cookbooks");
-        } else {
-          return foundUser;
-        }
+      if (foundUser.cookbooks.length) {
+        return foundUser.populate("cookbooks");
       } else {
-        return foundUser.populate("recipes").populate("cookbooks");
+        return foundUser;
+      }
+    })
+    .then((foundUser) => {
+      if (foundUser.recipes.length) {
+        return foundUser.populate("recipes");
+      } else {
+        return foundUser;
+      }
+    })
+    .then((foundUser) => {
+      if (foundUser.reviews.length) {
+        return foundUser.populate("reviews");
+      } else {
+        return foundUser;
       }
     })
     .then((user) => {
@@ -99,20 +103,24 @@ router.get("/profile", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
   User.findById(userId)
     .then((foundUser) => {
-      if (!foundUser.cookbooks.lengh) {
-        if (foundUser.recipes.lengh) {
-          return foundUser.populate("recipes");
-        } else {
-          return foundUser;
-        }
-      } else if (!foundUser.recipes.lengh) {
-        if (foundUser.cookbooks.lengh) {
-          return foundUser.populate("cookbooks");
-        } else {
-          return foundUser;
-        }
+      if (foundUser.cookbooks.length) {
+        return foundUser.populate("cookbooks");
       } else {
-        return foundUser.populate("recipes").populate("cookbooks");
+        return foundUser;
+      }
+    })
+    .then((foundUser) => {
+      if (foundUser.recipes.length) {
+        return foundUser.populate("recipes");
+      } else {
+        return foundUser;
+      }
+    })
+    .then((foundUser) => {
+      if (foundUser.reviews.length) {
+        return foundUser.populate("reviews");
+      } else {
+        return foundUser;
       }
     })
     .then((user) => {
@@ -133,21 +141,27 @@ router.post("/update", isAuthenticated, (req, res, next) => {
   User.findById(req.user._id)
     .then((foundUser) => {
       if (email !== foundUser.email) {
-        User.findByIdAndUpdate(
-          req.user._id,
-          {
-            email,
-          },
-          { new: true }
-        )
-          .then((updatedUser) => console.log("Changed User Email"))
-          .catch((err) => {
-            console.log(err);
-            res.json(err);
-            next(err);
-          });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(email)) {
+          res.status(400).json({ message: "Provide a valid email address." });
+          return;
+        } else {
+          User.findByIdAndUpdate(
+            req.user._id,
+            {
+              email,
+            },
+            { new: true }
+          )
+            .then((updatedUser) => console.log("Changed User Email"))
+            .catch((err) => {
+              console.log(err);
+              res.json(err);
+              next(err);
+            });
+        }
       }
-      if (image !== "") {
+      if (image) {
         User.findByIdAndUpdate(
           req.user._id,
           {
@@ -170,20 +184,24 @@ router.post("/update", isAuthenticated, (req, res, next) => {
         { new: true }
       )
         .then((updatedUser) => {
-          if (!updatedUser.cookbooks.lengh) {
-            if (updatedUser.recipes.lengh) {
-              return updatedUser.populate("recipes");
-            } else {
-              return updatedUser;
-            }
-          } else if (!updatedUser.recipes.lengh) {
-            if (updatedUser.cookbooks.lengh) {
-              return updatedUser.populate("cookbooks");
-            } else {
-              return updatedUser;
-            }
+          if (updatedUser.cookbooks.length) {
+            return updatedUser.populate("cookbooks");
           } else {
-            return updatedUser.populate("recipes").populate("cookbooks");
+            return updatedUser;
+          }
+        })
+        .then((updatedUser) => {
+          if (updatedUser.recipes.length) {
+            return updatedUser.populate("recipes");
+          } else {
+            return updatedUser;
+          }
+        })
+        .then((updatedUser) => {
+          if (updatedUser.reviews.length) {
+            return updatedUser.populate("reviews");
+          } else {
+            return updatedUser;
           }
         })
         .then((updatedUser) => {

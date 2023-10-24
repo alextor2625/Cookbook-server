@@ -81,13 +81,39 @@ router.post("/create", isAuthenticated, (req, res, next) => {
           )
             .populate("recipes")
             .then((updatedUser) => {
+              if (updatedUser.cookbooks.length) {
+                return updatedUser.populate("cookbooks");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
+              if (updatedUser.reviews.length) {
+                return updatedUser.populate("reviews");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
               const { _id, email, name, cookbooks, recipes, reviews, image } =
                 updatedUser;
-              const user = { _id, email, name, cookbooks, recipes, reviews, image };
+              const user = {
+                _id,
+                email,
+                name,
+                cookbooks,
+                recipes,
+                reviews,
+                image,
+              };
               authToken = jwt.sign(user, process.env.SECRET, {
                 algorithm: "HS256",
                 expiresIn: "6h",
               });
+              console.log(
+                { user, authToken },
+                "<<<<<<===== Recipe Created Sending {user, authtoken}"
+              );
               res.json({ user, authToken });
             })
             .catch((err) => {
@@ -112,7 +138,7 @@ router.post("/create", isAuthenticated, (req, res, next) => {
 // Copies a recipe from another user if they change ingredients or
 // instructions and adds it to the current user's recipe list and
 // gives changes the alteredBy property to the current user's id. //Tested Works Might add something later
-router.post("/edit/:recipeId", isAuthenticated, (req, res, next) => {
+router.post("/fork/:recipeId", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
   const { recipeId } = req.params;
   const { name, category, ingredients, instructions } = req.body;
@@ -147,9 +173,31 @@ router.post("/edit/:recipeId", isAuthenticated, (req, res, next) => {
           )
             .populate("recipes")
             .then((updatedUser) => {
+              if (updatedUser.cookbooks.length) {
+                return updatedUser.populate("cookbooks");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
+              if (updatedUser.reviews.length) {
+                return updatedUser.populate("reviews");
+              } else {
+                return updatedUser;
+              }
+            })
+            .then((updatedUser) => {
               const { _id, email, name, cookbooks, recipes, reviews, image } =
                 updatedUser;
-              const user = { _id, email, name, cookbooks, recipes, reviews, image };
+              const user = {
+                _id,
+                email,
+                name,
+                cookbooks,
+                recipes,
+                reviews,
+                image,
+              };
               authToken = jwt.sign(user, process.env.SECRET, {
                 algorithm: "HS256",
                 expiresIn: "6h",
@@ -215,7 +263,29 @@ router.put("/add/:recipeId", isAuthenticated, (req, res, next) => {
       { new: true }
     )
       .then((updatedUser) => {
-        const { _id, email, name, cookbooks, recipes, reviews, image } = updatedUser;
+        if (updatedUser.cookbooks.length) {
+          return updatedUser.populate("cookbooks");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.reviews.length) {
+          return updatedUser.populate("reviews");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.recipes.length) {
+          return updatedUser.populate("recipes");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        const { _id, email, name, cookbooks, recipes, reviews, image } =
+          updatedUser;
         const user = { _id, email, name, cookbooks, recipes, reviews, image };
         authToken = jwt.sign(user, process.env.SECRET, {
           algorithm: "HS256",
@@ -268,10 +338,39 @@ router.delete("/delete/:recipeId", isAuthenticated, (req, res, next) => {
             next(err);
           });
         User.findById(req.user._id)
-          .populate("recipes")
           .then((updatedUser) => {
-            const { _id, email, name, cookbooks, recipes, reviews, image } = updatedUser;
-            const user = { _id, email, name, cookbooks, recipes, reviews, image };
+            if (updatedUser.cookbooks.length) {
+              return updatedUser.populate("cookbooks");
+            } else {
+              return updatedUser;
+            }
+          })
+          .then((updatedUser) => {
+            if (updatedUser.recipes.length) {
+              return updatedUser.populate("recipes");
+            } else {
+              return updatedUser;
+            }
+          })
+          .then((updatedUser) => {
+            if (updatedUser.reviews.length) {
+              return updatedUser.populate("reviews");
+            } else {
+              return updatedUser;
+            }
+          })
+          .then((updatedUser) => {
+            const { _id, email, name, cookbooks, recipes, reviews, image } =
+              updatedUser;
+            const user = {
+              _id,
+              email,
+              name,
+              cookbooks,
+              recipes,
+              reviews,
+              image,
+            };
             authToken = jwt.sign(user, process.env.SECRET, {
               algorithm: "HS256",
               expiresIn: "6h",
@@ -305,9 +404,30 @@ router.delete("/remove/:recipeId", isAuthenticated, (req, res, next) => {
     { $pull: { recipes: recipeId } },
     { new: true }
   )
-    .populate("recipes")
     .then((updatedUser) => {
-      const { _id, email, name, cookbooks, recipes, reviews, image } = updatedUser;
+      if (updatedUser.cookbooks.length) {
+        return updatedUser.populate("cookbooks");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.recipes.length) {
+        return updatedUser.populate("recipes");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.reviews.length) {
+        return updatedUser.populate("reviews");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      const { _id, email, name, cookbooks, recipes, reviews, image } =
+        updatedUser;
       const user = { _id, email, name, cookbooks, recipes, reviews, image };
       authToken = jwt.sign(user, process.env.SECRET, {
         algorithm: "HS256",

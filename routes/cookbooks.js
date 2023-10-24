@@ -67,49 +67,121 @@ router.get("/:cookbookId", isAuthenticated, (req, res, next) => {
 //tested
 router.post("/create", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
-  const { name } = req.body;
+  const { name, image } = req.body;
   User.findById(userId)
     .then((foundUser) => {
-      Cookbook.create({
-        name,
-        author: foundUser._id,
-      })
-        .then((newCookbook) => {
-          User.findByIdAndUpdate(
-            userId,
-            { $push: { cookbooks: newCookbook._id } },
-            { new: true }
-          )
-            .populate("cookbooks")
-            .then((updatedUser) => {
-              const { _id, email, name, cookbooks, recipes, reviews, image } =
-                updatedUser;
-              const user = {
-                _id,
-                email,
-                name,
-                cookbooks,
-                recipes,
-                reviews,
-                image,
-              };
-              authToken = jwt.sign(user, process.env.SECRET, {
-                algorithm: "HS256",
-                expiresIn: "6h",
-              });
-              res.json({ user, authToken });
-            })
-            .catch((err) => {
-              console.log(err);
-              res.json({ err });
-              next(err);
-            });
+      if (image) {
+        Cookbook.create({
+          name,
+          image,
+          author: foundUser._id,
         })
-        .catch((err) => {
-          console.log(err);
-          res.json(err);
-          next(err);
-        });
+          .then((newCookbook) => {
+            User.findByIdAndUpdate(
+              userId,
+              { $push: { cookbooks: newCookbook._id } },
+              { new: true }
+            )
+              .populate("cookbooks")
+              .then(updatedUser => {
+                if(updatedUser.reviews.length){
+                  return updatedUser.populate('reviews')
+                } else{
+                  return updatedUser;
+                }
+              })
+              .then(updatedUser => {
+                if(updatedUser.recipes.length){
+                  return updatedUser.populate('recipes')
+                } else{
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                const { _id, email, name, cookbooks, recipes, reviews, image } =
+                  updatedUser;
+                const user = {
+                  _id,
+                  email,
+                  name,
+                  cookbooks,
+                  recipes,
+                  reviews,
+                  image,
+                };
+                authToken = jwt.sign(user, process.env.SECRET, {
+                  algorithm: "HS256",
+                  expiresIn: "6h",
+                });
+                res.json({ user, authToken });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.json({ err });
+                next(err);
+              });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      } else {
+        Cookbook.create({
+          name,
+          author: foundUser._id,
+        })
+          .then((newCookbook) => {
+            User.findByIdAndUpdate(
+              userId,
+              { $push: { cookbooks: newCookbook._id } },
+              { new: true }
+            )
+              .populate("cookbooks")
+              .then((updatedUser) => {
+                if (updatedUser.recipes.length) {
+                  return updatedUser.populate("recipes");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                if (updatedUser.reviews.length) {
+                  return updatedUser.populate("reviews");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                const { _id, email, name, cookbooks, recipes, reviews, image } =
+                  updatedUser;
+                const user = {
+                  _id,
+                  email,
+                  name,
+                  cookbooks,
+                  recipes,
+                  reviews,
+                  image,
+                };
+                authToken = jwt.sign(user, process.env.SECRET, {
+                  algorithm: "HS256",
+                  expiresIn: "6h",
+                });
+                res.json({ user, authToken });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.json({ err });
+                next(err);
+              });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      }
     })
     .catch((err) => {
       console.log(err);
@@ -184,6 +256,27 @@ router.put("/add/:cookbookId", isAuthenticated, (req, res, next) => {
       { new: true }
     )
       .then((updatedUser) => {
+        if (updatedUser.cookbooks.length) {
+          return updatedUser.populate("cookbooks");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.recipes.length) {
+          return updatedUser.populate("recipes");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.reviews.length) {
+          return updatedUser.populate("reviews");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
         const { _id, email, name, cookbooks, recipes, reviews, image } =
           updatedUser;
         const user = { _id, email, name, cookbooks, recipes, reviews, image };
@@ -200,7 +293,6 @@ router.put("/add/:cookbookId", isAuthenticated, (req, res, next) => {
       });
   });
 });
-// tested
 router.delete("/delete/:cookbookId", isAuthenticated, (req, res, next) => {
   const { cookbookId } = req.params;
   Cookbook.findById(cookbookId)
@@ -232,7 +324,27 @@ router.delete("/delete/:cookbookId", isAuthenticated, (req, res, next) => {
             next(err);
           });
         User.findById(req.user._id)
-          .populate("cookbooks")
+          .then((updatedUser) => {
+            if (updatedUser.cookbooks.length) {
+              return updatedUser.populate("cookbooks");
+            } else {
+              return updatedUser;
+            }
+          })
+          .then((updatedUser) => {
+            if (updatedUser.recipes.length) {
+              return updatedUser.populate("recipes");
+            } else {
+              return updatedUser;
+            }
+          })
+          .then((updatedUser) => {
+            if (updatedUser.reviews.length) {
+              return updatedUser.populate("reviews");
+            } else {
+              return updatedUser;
+            }
+          })
           .then((updatedUser) => {
             const { _id, email, name, cookbooks, recipes, reviews, image } =
               updatedUser;
@@ -276,7 +388,27 @@ router.delete("/remove/:cookbookId", isAuthenticated, (req, res, next) => {
     { $pull: { cookbooks: cookbookId } },
     { new: true }
   )
-    .populate("cookbooks")
+    .then((updatedUser) => {
+      if (updatedUser.cookbooks.length) {
+        return updatedUser.populate("cookbooks");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.recipes.length) {
+        return updatedUser.populate("recipes");
+      } else {
+        return updatedUser;
+      }
+    })
+    .then((updatedUser) => {
+      if (updatedUser.reviews.length) {
+        return updatedUser.populate("reviews");
+      } else {
+        return updatedUser;
+      }
+    })
     .then((updatedUser) => {
       const { _id, email, name, cookbooks, recipes, reviews, image } =
         updatedUser;
@@ -294,7 +426,10 @@ router.delete("/remove/:cookbookId", isAuthenticated, (req, res, next) => {
     });
 });
 // tested
-router.delete("/remove/:cookbookId/:recipeId", isAuthenticated, (req, res, next) => {
+router.delete(
+  "/remove/:cookbookId/:recipeId",
+  isAuthenticated,
+  (req, res, next) => {
     const { cookbookId, recipeId } = req.params;
     Cookbook.findByIdAndUpdate(
       cookbookId,
