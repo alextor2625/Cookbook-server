@@ -76,7 +76,7 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
         rating,
         comment,
         author: foundUser._id,
-        recipe: recipeId
+        recipe: recipeId,
       })
         .then((newReview) => {
           Recipe.findByIdAndUpdate(
@@ -181,62 +181,76 @@ router.post("/update/:reviewId", isAuthenticated, (req, res, next) => {
 });
 
 // tested
-router.delete("/delete/:reviewId", isAuthenticated, (req, res, next) => {
-  const { reviewId } = req.params;
-  Review.findByIdAndDelete(reviewId)
-    .then((deletedReview) => {
-      if (!deletedReview) {
-        res.json({ message: "Review Not Found." });
-      } else {
-        console.log(deletedReview, "Review Deleted");
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      res.json({ err });
-      next(err);
-    });
-  User.findByIdAndUpdate(
-    req.user._id,
-    { $pull: { reviews: reviewId } },
-    { new: true }
-  )
-    .then((updatedUser) => {
-      if (updatedUser.cookbooks.length) {
-        return updatedUser.populate("cookbooks");
-      } else {
-        return updatedUser;
-      }
-    })
-    .then((updatedUser) => {
-      if (updatedUser.recipes.length) {
-        return updatedUser.populate("recipes");
-      } else {
-        return updatedUser;
-      }
-    })
-    .then((updatedUser) => {
-      if (updatedUser.reviews.length) {
-        return updatedUser.populate("reviews");
-      } else {
-        return updatedUser;
-      }
-    })
-    .then((updatedUser) => {
-      const { _id, email, name, cookbooks, recipes, reviews, image } =
-        updatedUser;
-      const user = { _id, email, name, cookbooks, recipes, reviews, image };
-      authToken = jwt.sign(user, process.env.SECRET, {
-        algorithm: "HS256",
-        expiresIn: "6h",
+router.delete("/delete/:recipeId/:reviewId",isAuthenticated,(req, res, next) => {
+    const { reviewId, recipeId } = req.params;
+    Review.findByIdAndDelete(reviewId)
+      .then((deletedReview) => {
+        if (!deletedReview) {
+          res.json({ message: "Review Not Found." });
+        } else {
+          console.log(deletedReview, "Review Deleted");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        res.json({ err });
+        next(err);
       });
-      res.json({ user, authToken });
-    })
-    .catch((err) => {
-      console.log(err);
-      res.json({ err });
-      next(err);
-    });
-});
+    Recipe.findByIdAndUpdate(
+      recipeId,
+      { $pull: { reviews: reviewId } },
+      { new: true }
+    )
+      .then((updatedRecipe) => {
+        console.log(updatedRecipe, "Removed Review From Recipe");
+      })
+      .catch((err) => {
+        console.log(err);
+        res.json({ err });
+        next(err);
+      });
+    User.findByIdAndUpdate(
+      req.user._id,
+      { $pull: { reviews: reviewId } },
+      { new: true }
+    )
+      .then((updatedUser) => {
+        if (updatedUser.cookbooks.length) {
+          return updatedUser.populate("cookbooks");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.recipes.length) {
+          return updatedUser.populate("recipes");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        if (updatedUser.reviews.length) {
+          return updatedUser.populate("reviews");
+        } else {
+          return updatedUser;
+        }
+      })
+      .then((updatedUser) => {
+        const { _id, email, name, cookbooks, recipes, reviews, image } =
+          updatedUser;
+        const user = { _id, email, name, cookbooks, recipes, reviews, image };
+        authToken = jwt.sign(user, process.env.SECRET, {
+          algorithm: "HS256",
+          expiresIn: "6h",
+        });
+        res.json({ user, authToken });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.json({ err });
+        next(err);
+      });
+  }
+);
 
 module.exports = router;
