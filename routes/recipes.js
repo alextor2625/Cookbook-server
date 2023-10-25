@@ -371,6 +371,7 @@ router.post("/update/:recipeId", isAuthenticated, (req, res, next) => {
 // Pins a recipe from another user without changing anything. //Tested Works
 router.put("/add/:recipeId", isAuthenticated, (req, res, next) => {
   Recipe.findById(req.params.recipeId).then((foundRecipe) => {
+    console.log(foundRecipe, "Is ERROR Here?");
     User.findByIdAndUpdate(
       req.user._id,
       { $addToSet: { recipes: req.params.recipeId } },
