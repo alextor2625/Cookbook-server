@@ -62,71 +62,140 @@ router.get("/:recipeId", isAuthenticated, (req, res, next) => {
 // Create a new recipe //Tested Works
 router.post("/create", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
-  const { name, category, ingredients, instructions } = req.body;
+  const { name, category, description, ingredients, instructions, image } =
+    req.body;
   User.findById(userId)
     .then((foundUser) => {
-      Recipe.create({
-        name,
-        category,
-        ingredients,
-        instructions,
-        author: foundUser._id,
-        alteredBy: foundUser._id,
-      })
-        .then((newRecipe) => {
-          User.findByIdAndUpdate(
-            userId,
-            { $push: { recipes: newRecipe._id } },
-            { new: true }
-          )
-            .populate("recipes")
-            .then((updatedUser) => {
-              if (updatedUser.cookbooks.length) {
-                return updatedUser.populate("cookbooks");
-              } else {
-                return updatedUser;
-              }
-            })
-            .then((updatedUser) => {
-              if (updatedUser.reviews.length) {
-                return updatedUser.populate("reviews");
-              } else {
-                return updatedUser;
-              }
-            })
-            .then((updatedUser) => {
-              const { _id, email, name, cookbooks, recipes, reviews, image } =
-                updatedUser;
-              const user = {
-                _id,
-                email,
-                name,
-                cookbooks,
-                recipes,
-                reviews,
-                image,
-              };
-              authToken = jwt.sign(user, process.env.SECRET, {
-                algorithm: "HS256",
-                expiresIn: "6h",
-              });
-              console.log(
-                { user, authToken },
-                "<<<<<<===== Recipe Created Sending {user, authtoken}"
-              );
-              res.json({ user, authToken });
-            })
-            .catch((err) => {
-              console.log(err);
-              res.json(err);
-              next(err);
-            });
+      if (image) {
+        Recipe.create({
+          name,
+          image,
+          category,
+          description,
+          ingredients,
+          instructions,
+          author: foundUser._id,
+          alteredBy: foundUser._id,
         })
-        .catch((err) => {
-          console.log(err);
-          res.json(err);
-          next(err);
-        });
+          .then((newRecipe) => {
+            User.findByIdAndUpdate(
+              userId,
+              { $push: { recipes: newRecipe._id } },
+              { new: true }
+            )
+              .populate("recipes")
+              .then((updatedUser) => {
+                if (updatedUser.cookbooks.length) {
+                  return updatedUser.populate("cookbooks");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                if (updatedUser.reviews.length) {
+                  return updatedUser.populate("reviews");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                const { _id, email, name, cookbooks, recipes, reviews, image } =
+                  updatedUser;
+                const user = {
+                  _id,
+                  email,
+                  name,
+                  cookbooks,
+                  recipes,
+                  reviews,
+                  image,
+                };
+                authToken = jwt.sign(user, process.env.SECRET, {
+                  algorithm: "HS256",
+                  expiresIn: "6h",
+                });
+                console.log(
+                  { user, authToken },
+                  "<<<<<<===== Recipe Created Sending {user, authtoken}"
+                );
+                res.json({ user, authToken });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.json(err);
+                next(err);
+              });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      } else {
+        Recipe.create({
+          name,
+          category,
+          description,
+          ingredients,
+          instructions,
+          author: foundUser._id,
+          alteredBy: foundUser._id,
+        })
+          .then((newRecipe) => {
+            User.findByIdAndUpdate(
+              userId,
+              { $push: { recipes: newRecipe._id } },
+              { new: true }
+            )
+              .populate("recipes")
+              .then((updatedUser) => {
+                if (updatedUser.cookbooks.length) {
+                  return updatedUser.populate("cookbooks");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                if (updatedUser.reviews.length) {
+                  return updatedUser.populate("reviews");
+                } else {
+                  return updatedUser;
+                }
+              })
+              .then((updatedUser) => {
+                const { _id, email, name, cookbooks, recipes, reviews, image } =
+                  updatedUser;
+                const user = {
+                  _id,
+                  email,
+                  name,
+                  cookbooks,
+                  recipes,
+                  reviews,
+                  image,
+                };
+                authToken = jwt.sign(user, process.env.SECRET, {
+                  algorithm: "HS256",
+                  expiresIn: "6h",
+                });
+                console.log(
+                  { user, authToken },
+                  "<<<<<<===== Recipe Created Sending {user, authtoken}"
+                );
+                res.json({ user, authToken });
+              })
+              .catch((err) => {
+                console.log(err);
+                res.json(err);
+                next(err);
+              });
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      }
     })
     .catch((err) => {
       console.log(err);
@@ -141,7 +210,7 @@ router.post("/create", isAuthenticated, (req, res, next) => {
 router.post("/fork/:recipeId", isAuthenticated, (req, res, next) => {
   const userId = req.user._id;
   const { recipeId } = req.params;
-  const { name, category, ingredients, instructions } = req.body;
+  const { name, category, ingredients, instructions, description, image } = req.body;
 
   Recipe.findById(recipeId).then((foundRecipe) => {
     console.log(ingredients, foundRecipe.ingredients);
@@ -151,19 +220,40 @@ router.post("/fork/:recipeId", isAuthenticated, (req, res, next) => {
     ) {
       User.findById(userId)
         .then((foundUser) => {
-          return Recipe.create({
-            name,
-            category,
-            ingredients,
-            instructions,
-            author: foundRecipe.author,
-            alteredBy: foundUser._id,
-            image: foundRecipe.image,
-          }).catch((err) => {
-            console.log(err);
-            res.json(err);
-            next(err);
-          });
+          if (image) {
+            
+            return Recipe.create({
+              name,
+              image,
+              category,
+              description,
+              ingredients,
+              instructions,
+              author: foundRecipe.author,
+              alteredBy: foundUser._id,
+              image: foundRecipe.image,
+            }).catch((err) => {
+              console.log(err);
+              res.json(err);
+              next(err);
+            });
+          } else {
+            return Recipe.create({
+              name,
+              category,
+              ingredients,
+              description,
+              instructions,
+              author: foundRecipe.author,
+              alteredBy: foundUser._id,
+              image: foundRecipe.image,
+            }).catch((err) => {
+              console.log(err);
+              res.json(err);
+              next(err);
+            });
+            
+          }
         })
         .then((newUpdatedRecipe) => {
           User.findByIdAndUpdate(
@@ -226,28 +316,52 @@ router.post("/fork/:recipeId", isAuthenticated, (req, res, next) => {
 // Updates a recipe you are the author of. //Tested Works
 router.post("/update/:recipeId", isAuthenticated, (req, res, next) => {
   const { recipeId } = req.params;
-  const { name, category, ingredients, instructions, image } = req.body;
+  const { name, category, description, ingredients, instructions, image } =
+    req.body;
   Recipe.findById(recipeId).then((foundRecipe) => {
     if (foundRecipe.alteredBy == req.user._id) {
-      Recipe.findByIdAndUpdate(
-        recipeId,
-        {
-          name,
-          category,
-          ingredients,
-          instructions,
-          image,
-        },
-        { new: true }
-      )
-        .then((foundRecipe) => {
-          res.json(foundRecipe);
-        })
-        .catch((err) => {
-          console.log(err);
-          res.json(err);
-          next(err);
-        });
+      if (image) {
+        Recipe.findByIdAndUpdate(
+          recipeId,
+          {
+            name,
+            category,
+            description,
+            ingredients,
+            instructions,
+            image,
+          },
+          { new: true }
+        )
+          .then((foundRecipe) => {
+            res.json(foundRecipe);
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      } else {
+        Recipe.findByIdAndUpdate(
+          recipeId,
+          {
+            name,
+            category,
+            description,
+            ingredients,
+            instructions,
+          },
+          { new: true }
+        )
+          .then((foundRecipe) => {
+            res.json(foundRecipe);
+          })
+          .catch((err) => {
+            console.log(err);
+            res.json(err);
+            next(err);
+          });
+      }
     } else {
       res.json({ message: "User is not this recipe's author." });
     }

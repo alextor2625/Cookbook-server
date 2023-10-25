@@ -8,6 +8,7 @@ const recipeSchema = new Schema(
       default: "Unnamed Recipe"
     },
     category: { type: String, default: "Unspecified" },
+    description: String,
     ingredients: String,
     instructions: String,
     author: { type: Schema.Types.ObjectId, ref: "User" },
