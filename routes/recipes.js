@@ -373,7 +373,7 @@ router.put("/add/:recipeId", isAuthenticated, (req, res, next) => {
   Recipe.findById(req.params.recipeId).then((foundRecipe) => {
     User.findByIdAndUpdate(
       req.user._id,
-      { $addToSet: { recipes: foundRecipe._id } },
+      { $addToSet: { recipes: req.params.recipeId } },
       { new: true }
     )
       .then((updatedUser) => {
