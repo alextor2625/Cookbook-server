@@ -76,6 +76,7 @@ router.post("/create/:recipeId", isAuthenticated, (req, res, next) => {
         rating,
         comment,
         author: foundUser._id,
+        recipe: recipeId
       })
         .then((newReview) => {
           Recipe.findByIdAndUpdate(

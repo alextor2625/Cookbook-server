@@ -369,12 +369,13 @@ router.post("/update/:recipeId", isAuthenticated, (req, res, next) => {
 });
 
 // Pins a recipe from another user without changing anything. //Tested Works
-router.put("/add/:recipeId", isAuthenticated, (req, res, next) => {
-  Recipe.findById(req.params.recipeId).then((foundRecipe) => {
+router.put("/add", isAuthenticated, (req, res, next) => {
+  console.log(req.body.recipeId);
+  Recipe.findById(req.body.recipeId).then((foundRecipe) => {
     console.log(foundRecipe, "Is ERROR Here?");
     User.findByIdAndUpdate(
       req.user._id,
-      { $addToSet: { recipes: req.params.recipeId } },
+      { $addToSet: { recipes: req.body.recipeId } },
       { new: true }
     )
       .then((updatedUser) => {
@@ -423,10 +424,7 @@ router.delete("/delete/:recipeId", isAuthenticated, (req, res, next) => {
   const { recipeId } = req.params;
   Recipe.findById(recipeId)
     .then((foundRecipe) => {
-      if (
-        req.user._id == foundRecipe.author ||
-        req.user._id == foundRecipe.alteredBy
-      ) {
+      if (req.user._id == foundRecipe.alteredBy) {
         Recipe.findByIdAndDelete(recipeId)
           .then((deletedRecipe) => {
             console.log(deletedRecipe, "Recipe Was Deleted");

@@ -3,6 +3,7 @@ const { Schema, model } = require("mongoose");
 const reviewSchema = new Schema(
   {
     author: { type: Schema.Types.ObjectId, ref: "User" },
+    recipe: { type: Schema.Types.ObjectId, ref: "Recipe" },
     title: { type: String, default: "" },
     rating: {
       type: Number,
