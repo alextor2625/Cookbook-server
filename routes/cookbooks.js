@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 
 const isAuthenticated = require("../middleware/isAuthenticated");
 //tested
-router.get("/all", isAuthenticated, (req, res, next) => {
+router.get("/all", (req, res, next) => {
   Cookbook.find()
     .then((allCookbooks) => {
       res.json(allCookbooks);
