@@ -420,182 +420,30 @@ router.put("/add", isAuthenticated, (req, res, next) => {
 // Deletes recipes you are the author of from the collection of recipes
 // and from every user's recipe list with the expeption of edited
 // versions of the same recipe from other users.    //Tested Works
-// router.delete("/delete/:recipeId", isAuthenticated, (req, res, next) => {
-//   const { recipeId } = req.params;
-//   Recipe.findById(recipeId)
-//     .then((foundRecipe) => {
-//       if (req.user._id == foundRecipe.alteredBy) {
-//         Recipe.findByIdAndDelete(recipeId)
-//           .then((deletedRecipe) => {
-//             console.log(deletedRecipe, "Recipe Was Deleted");
-//           })
-//           .catch((err) => {
-//             console.log(err);
-//             res.json(err);
-//             next(err);
-//           });
-
-//         User.updateMany(
-//           { recipes: recipeId },
-//           { $pull: { recipes: recipeId } },
-//           { new: true }
-//         )
-//           .then((updatedUsers) =>
-//             console.log(
-//               updatedUsers,
-//               "Recipe was deleted from all users recipes list"
-//             )
-//           )
-//           .catch((err) => {
-//             console.log(err);
-//             res.json(err);
-//             next(err);
-//           });
-//         User.findById(req.user._id)
-//           .then((updatedUser) => {
-//             if (updatedUser.cookbooks.length) {
-//               return updatedUser.populate("cookbooks");
-//             } else {
-//               return updatedUser;
-//             }
-//           })
-//           .then((updatedUser) => {
-//             if (updatedUser.recipes.length) {
-//               return updatedUser.populate("recipes");
-//             } else {
-//               return updatedUser;
-//             }
-//           })
-//           .then((updatedUser) => {
-//             if (updatedUser.reviews.length) {
-//               return updatedUser.populate("reviews");
-//             } else {
-//               return updatedUser;
-//             }
-//           })
-//           .then((updatedUser) => {
-//             const { _id, email, name, cookbooks, recipes, reviews, image } =
-//               updatedUser;
-//             const user = {
-//               _id,
-//               email,
-//               name,
-//               cookbooks,
-//               recipes,
-//               reviews,
-//               image,
-//             };
-//             authToken = jwt.sign(user, process.env.SECRET, {
-//               algorithm: "HS256",
-//               expiresIn: "6h",
-//             });
-//             res.json({ user, authToken });
-//           })
-//           .catch((err) => {
-//             console.log(err);
-//             res.json(err);
-//             next(err);
-//           });
-//       } else {
-//         res.json({
-//           message: "User Doesn't Have Any Ownership Over This Recipe.",
-//         });
-//       }
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//       res.json({ message: "Recipe Doesnt Exist" });
-//       next(err);
-//     });
-// });
-
-// router.delete("/delete/:recipeId", isAuthenticated, (req, res, next) => {
-//   const { recipeId } = req.params;
-
-//   Recipe.findById(recipeId)
-//     .then((foundRecipe) => {
-//       if (!foundRecipe) {
-//         return res.json({ message: "Recipe doesn't exist" });
-//       }
-
-//       if (req.user._id == foundRecipe.author) {
-//         // Delete the recipe
-//         Recipe.findByIdAndDelete(recipeId)
-//           .then(() => {
-//             // Remove the recipe from all users' recipes lists
-//             return User.updateMany(
-//               { recipes: recipeId },
-//               { $pull: { recipes: recipeId } }
-//             );
-//           })
-//           .then(() => {
-//             // Find all reviews associated with the recipe
-//             return Review.find({ recipe: recipeId });
-//           })
-//           .then((foundReviews) => {
-//             // Remove reviews and review IDs from users' reviews lists
-//             const promises = foundReviews.map((review) => {
-//               return User.updateMany(
-//                 { reviews: review._id },
-//                 { $pull: { reviews: review._id } }
-//               );
-//             });
-//             return Promise.all(promises);
-//           })
-//           .then(() => {
-//             // Update the user's data
-//             return User.findById(req.user._id).populate("cookbooks reviews recipes");
-//           })
-//           .then((updatedUser) => {
-//             const { _id, email, name, cookbooks, recipes, reviews, image } = updatedUser;
-//             const user = { _id, email, name, cookbooks, recipes, reviews, image };
-//             authToken = jwt.sign(user, process.env.SECRET, {
-//               algorithm: "HS256",
-//               expiresIn: "6h",
-//             });
-//             res.json({ user, authToken });
-//           })
-//           .catch((err) => {
-//             console.log(err);
-//             res.json(err);
-//             next(err);
-//           });
-//       } else {
-//         res.json({ message: "User doesn't have ownership over this recipe." });
-//       }
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//       res.json({ message: "Recipe doesn't exist" });
-//       next(err);
-//     });
-// });
-
 router.delete("/delete/:recipeId", isAuthenticated, (req, res, next) => {
   const { recipeId } = req.params;
 
   Recipe.findById(recipeId)
-    .then((foundRecipe) => {
+    .then(async (foundRecipe) => {
       if (!foundRecipe) {
         return res.json({ message: "Recipe doesn't exist" });
       }
 
       if (req.user._id.toString() === foundRecipe.author.toString()) {
-        let recipeDeletionPromise = Recipe.findByIdAndDelete(recipeId);
-        let reviewsFindPromise = Review.find({ recipe: recipeId }).then(
-          (foundReviews) => {
-            return foundReviews.map((review) => {
-              User.findOneAndUpdate(
+        let recipeDeletionPromise = await Recipe.findByIdAndDelete(recipeId);
+        let reviewsFindPromise = await Review.find({ recipe: recipeId }).then((foundReviews) => {
+            return foundReviews.map(async (review) => {
+              await User.findOneAndUpdate(
                 { reviews: review._id },
                 { $pull: { reviews: review._id } }
               );
             });
           }
         );
-        let reviewDeletionPromise = Review.deleteMany({ recipe: recipeId });
+        let reviewDeletionPromise = await Review.deleteMany({ recipe: recipeId });
 
         // Remove the recipe from all users' recipes lists
-        let usersUpdatePromise = User.updateMany(
+        let usersUpdatePromise = await User.updateMany(
           { recipes: recipeId },
           { $pull: { recipes: recipeId } }
         );
