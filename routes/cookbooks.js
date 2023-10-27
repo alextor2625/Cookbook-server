@@ -10,6 +10,10 @@ const isAuthenticated = require("../middleware/isAuthenticated");
 //tested
 router.get("/all", (req, res, next) => {
   Cookbook.find()
+    .populate({
+      path: "recipes",
+      populate:  { path: "author alteredBy"  },
+    })
     .then((allCookbooks) => {
       res.json(allCookbooks);
     })
@@ -83,17 +87,17 @@ router.post("/create", isAuthenticated, (req, res, next) => {
               { new: true }
             )
               .populate("cookbooks")
-              .then(updatedUser => {
-                if(updatedUser.reviews.length){
-                  return updatedUser.populate('reviews')
-                } else{
+              .then((updatedUser) => {
+                if (updatedUser.reviews.length) {
+                  return updatedUser.populate("reviews");
+                } else {
                   return updatedUser;
                 }
               })
-              .then(updatedUser => {
-                if(updatedUser.recipes.length){
-                  return updatedUser.populate('recipes')
-                } else{
+              .then((updatedUser) => {
+                if (updatedUser.recipes.length) {
+                  return updatedUser.populate("recipes");
+                } else {
                   return updatedUser;
                 }
               })

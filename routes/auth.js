@@ -130,7 +130,11 @@ router.post("/login", (req, res, next) => {
           if (recipes.length) {
             promises.push(
               User.findById(_id)
-                .populate("recipes")
+                // .populate("recipes")
+                .populate({
+                  path: "recipes",
+                  populate: { path: "author alteredBy" },
+                })
                 .then((populatedUser) => {
                   recipes = JSON.parse(JSON.stringify(populatedUser.recipes));
                 })
@@ -144,6 +148,12 @@ router.post("/login", (req, res, next) => {
             promises.push(
               User.findById(_id)
                 .populate("cookbooks")
+                // .populate({
+                //   path: 'cookbooks', 
+                //   populate: {path: 'recipes',
+                //     populate: {path: 'author alteredBy'}
+                // }
+              // })
                 .then((populatedUser) => {
                   cookbooks = JSON.parse(
                     JSON.stringify(populatedUser.cookbooks)
